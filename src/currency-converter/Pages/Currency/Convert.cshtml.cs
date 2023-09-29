@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -8,8 +9,10 @@ namespace CurrencyConverter.Pages.Currency
 {
     public class ConvertModel : PageModel
     {
+        private readonly IValidator<CurrencyConverterModel> _validator;
+
         [BindProperty]
-        public InputModel Input { get; set; } = default!;
+        public CurrencyConverterModel Input { get; set; } = default!;
 
         public SelectListItem[] CurrencyCodes { get; } =
         {
@@ -19,37 +22,36 @@ namespace CurrencyConverter.Pages.Currency
             new SelectListItem{Text="EUR", Value = "EUR"},
         };
 
+        public ConvertModel(IValidator<CurrencyConverterModel> validator)
+        {
+            _validator = validator;
+        }
+
         public void OnGet()
         {
         }
 
         public IActionResult OnPost()
         {
-            if(Input.CurrencyFrom == Input.CurrencyTo)
-            {
-                ModelState.AddModelError(string.Empty,"Cannot convert currency to itself");
-            }
+            var result = _validator.Validate(Input);
 
-            if(!ModelState.IsValid)
+            if (!result.IsValid)
+            {
+                foreach (var error in result.Errors)
+                    ModelState.AddModelError(error.PropertyName, error.ErrorMessage);
+
                 return Page();
+            }
 
             return RedirectToPage("Success");
         }
 
 
-        public class InputModel
-        {
-            [Required, DisplayName("Currency from"), StringLength(3, MinimumLength = 3), CurrencyCode("GBP", "USD", "CAD", "EUR")]
-            public string CurrencyFrom { get; set; } = default!;
-
-
-
-            [Required, DisplayName("Currency to"), StringLength(3, MinimumLength = 3), CurrencyCode("GBP", "USD", "CAD", "EUR")]
-            public string CurrencyTo { get; set; } = default!;
-
-
-            [Required, Range(1, 1000)]
-            public decimal Quantity { get; set; } = default!;
-        }
+    }
+    public class CurrencyConverterModel
+    {
+        public string CurrencyFrom { get; set; } = default!;
+        public string CurrencyTo { get; set; } = default!;
+        public decimal Quantity { get; set; } = default!;
     }
 }

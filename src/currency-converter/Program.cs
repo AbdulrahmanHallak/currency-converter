@@ -1,4 +1,6 @@
+using FluentValidation;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace CurrencyConverter;
 
@@ -20,6 +22,8 @@ public class Program
             options.LowercaseUrls = true;
             options.LowercaseQueryStrings = true;
         });
+
+        builder.Services.AddValidatorsFromAssemblyContaining<CurrencyConverterValidator>();
 
         var app = builder.Build();
 
